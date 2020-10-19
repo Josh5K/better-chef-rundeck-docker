@@ -1,0 +1,13 @@
+version: '3'
+
+services:
+    better-chef-rundeck:
+        build: .
+        tty: true
+        volumes:
+          - ~/.chef/:/etc/chef
+        ports:
+        - 3000:3000
+        environment:
+        - BCR_CHEF_CONFIG=/etc/chef/knife.rb
+        - CHEF_RUNDECK=true
