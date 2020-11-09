@@ -1,6 +1,6 @@
 FROM alpine:3.4
 
-RUN useradd -r -u 1234 -g passenger passenger
+RUN adduser -r -u 1234 -g passenger passenger
 USER passenger
 
 RUN apk --no-cache add \
