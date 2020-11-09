@@ -1,5 +1,7 @@
 FROM alpine:3.4
 
+RUN addgroup -g 3000 -S passenger && adduser -u 1234 -S passenger  -G passenger 
+
 RUN apk --no-cache add \
     libgcrypt \
     libstdc++ \
