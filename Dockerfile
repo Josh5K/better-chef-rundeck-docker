@@ -1,6 +1,6 @@
 FROM alpine:3.4
 
-RUN addgroup -g 3000 -S passenger && adduser -u 1234 -S passenger  -G passenger 
+RUN addgroup -g 3000 -S passenger && adduser -u 1000 -S passenger  -G passenger 
 
 RUN apk --no-cache add \
     libgcrypt \
@@ -20,7 +20,6 @@ RUN apk --no-cache add \
     ruby-rake \
   && echo "gem: --no-document" > /etc/gemrc
 
-ENV PASSENGER_VERSION=5.0.30
 RUN apk --no-cache add --virtual .passenger-deps \
     gcc \
     g++ \
@@ -28,12 +27,18 @@ RUN apk --no-cache add --virtual .passenger-deps \
     linux-headers \
     curl-dev \
     pcre-dev \
+    ruby-dev
+
+RUN apk --no-cache --virtual .build-deps add  \
+    build-base \
+    libffi-dev \
     ruby-dev \
-  && gem install -v $PASSENGER_VERSION passenger \
+    tar
+ENV PASSENGER_VERSION=5.0.30
+RUN gem install -v $PASSENGER_VERSION passenger \
   && echo "#undef LIBC_HAS_BACKTRACE_FUNC" > /usr/include/execinfo.h \
   && passenger-config install-standalone-runtime --auto \
-  && passenger-config build-native-support \
-  && apk del --purge .passenger-deps
+  && passenger-config build-native-support
 
 WORKDIR /app
 
@@ -46,17 +51,12 @@ ENV BUNDLE_SILENCE_ROOT_WARNING=1 \
     BUNDLE_GEMFILE=/app/Gemfile \
     BUNDLE_WITHOUT=development:benchmark:test
 
-RUN \
-  apk --no-cache --virtual .build-deps add  \
-    build-base \
-    libffi-dev \
-    ruby-dev \
-    tar \
-  && curl -sfLo better-chef-rundeck.tar.gz "https://github.com/atheiman/better-chef-rundeck/archive/v0.6.0.tar.gz" \
-  && tar -xzf better-chef-rundeck.tar.gz --strip-components=1 \
-  && rm better-chef-rundeck.tar.gz \
-  && sed -i "/^gem 'passenger'/d" Gemfile \
-  && bundle update \
-  && apk del --purge .build-deps
+RUN curl -sfLo better-chef-rundeck.tar.gz "https://github.com/atheiman/better-chef-rundeck/archive/v0.6.0.tar.gz"
+RUN tar -xzf better-chef-rundeck.tar.gz --strip-components=1
+RUN rm better-chef-rundeck.tar.gz
+RUN sed -i "/^gem 'passenger'/d" Gemfile
+RUN bundle update
+RUN chmod 777 ./
+USER passenger
 
 CMD ["passenger", "start", "--environment", "production"]
